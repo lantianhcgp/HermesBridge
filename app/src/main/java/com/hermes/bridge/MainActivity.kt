@@ -57,6 +57,12 @@ class MainActivity : AppCompatActivity() {
             startHttpService()
         }
         
+        // 终端调起模式：启动服务后立即退出，不打扰用户
+        if (intent?.getBooleanExtra("auto_finish", false) == true) {
+            finish()
+            return
+        }
+        
         updateUI()
     }
     
