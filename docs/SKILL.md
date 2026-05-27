@@ -723,6 +723,7 @@ signingConfigs {
 
 ## Tips
 
+- **Always get correct system timestamp first** — use `date +%s%3N` to get current time in milliseconds, then calculate event times relative to it. Do NOT hardcode timestamps — wrong timestamps cause events to be created in the past and not appear in the calendar.
 - **Always check health first** before calling other APIs
 - **Use `am start --user 0`** for reliable service start — `termux-open` silently fails on Android 13
 - **Use `python3 -m json.tool`** to pretty-print JSON responses
