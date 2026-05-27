@@ -2,14 +2,19 @@ package com.hermes.bridge
 
 import android.content.Context
 import android.telephony.SmsManager
+import com.google.gson.Gson
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 
 class SmsTool(private val context: Context) {
     
+    private val gson = Gson()
+    
     suspend fun sendSms(call: ApplicationCall): Map<String, Any> {
         return try {
-            val body = call.receive<Map<String, Any>>()
+            val bodyStr = call.receiveText()
+            @Suppress("UNCHECKED_CAST")
+            val body = gson.fromJson(bodyStr, Map::class.java) as Map<String, Any>
             
             val to = body["to"] as? String ?: return errorResponse("to is required")
             val message = body["message"] as? String ?: return errorResponse("message is required")

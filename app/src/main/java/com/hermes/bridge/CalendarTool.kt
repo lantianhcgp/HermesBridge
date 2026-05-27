@@ -4,6 +4,7 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.provider.CalendarContract
+import com.google.gson.Gson
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import java.util.TimeZone
@@ -21,9 +22,17 @@ class CalendarTool(private val context: Context) {
         val allDay: Boolean
     )
     
+    private val gson = Gson()
+    
+    private fun parseBody(call: ApplicationCall): Map<String, Any> {
+        val bodyStr = call.receiveText()
+        @Suppress("UNCHECKED_CAST")
+        return gson.fromJson(bodyStr, Map::class.java) as Map<String, Any>
+    }
+    
     suspend fun createEvent(call: ApplicationCall): Map<String, Any> {
         return try {
-            val body = call.receive<Map<String, Any>>()
+            val body = parseBody(call)
             
             val title = body["title"] as? String ?: return errorResponse("title is required")
             val startMs = body["start_ms"] as? Number ?: return errorResponse("start_ms is required")
@@ -140,7 +149,7 @@ class CalendarTool(private val context: Context) {
     
     suspend fun deleteEvent(call: ApplicationCall): Map<String, Any> {
         return try {
-            val body = call.receive<Map<String, Any>>()
+            val body = parseBody(call)
             val eventId = (body["event_id"] as? Number)?.toLong()
                 ?: return errorResponse("event_id is required")
             
@@ -164,7 +173,7 @@ class CalendarTool(private val context: Context) {
     
     suspend fun updateEvent(call: ApplicationCall): Map<String, Any> {
         return try {
-            val body = call.receive<Map<String, Any>>()
+            val body = parseBody(call)
             val eventId = (body["event_id"] as? Number)?.toLong()
                 ?: return errorResponse("event_id is required")
             

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import com.google.gson.Gson
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 
@@ -13,10 +14,13 @@ class NotifyTool(private val context: Context) {
     
     private val CHANNEL_ID = "HermesBridgeNotify"
     private var notificationId = 100
+    private val gson = Gson()
     
     suspend fun sendNotification(call: ApplicationCall): Map<String, Any> {
         return try {
-            val body = call.receive<Map<String, Any>>()
+            val bodyStr = call.receiveText()
+            @Suppress("UNCHECKED_CAST")
+            val body = gson.fromJson(bodyStr, Map::class.java) as Map<String, Any>
             
             val title = body["title"] as? String ?: return errorResponse("title is required")
             val text = body["text"] as? String ?: return errorResponse("text is required")
