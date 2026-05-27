@@ -1,13 +1,18 @@
-*.iml
-.gradle
-/local.properties
-/.idea
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-hermesbridge.keystore
-hermesbridge.keystore.base64
-apks/
+     1|*.iml
+     2|.gradle
+     3|/local.properties
+     4|/.idea
+     5|.DS_Store
+     6|/build
+     7|/captures
+     8|.externalNativeBuild
+     9|.cxx
+    10|local.properties
+    11|hermesbridge.keystore
+    12|hermesbridge.keystore.base64
+    13|apks/
+    14|
+# Temporary build artifacts
+*.zip
+apk-output/
+apk-new/
