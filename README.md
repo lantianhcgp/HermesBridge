@@ -47,14 +47,44 @@ Agent 会自动拉起 App → 调用 API → 创建日程，**全程无感**。
 
 ## 🚀 安装
 
-```bash
-# 1. 从 GitHub Releases 下载最新 APK
-# https://github.com/lantianhcgp/HermesBridge/releases
+### 步骤 1：安装 App
 
-# 2. 安装到手机（手动点击安装）
-# 3. 打开 App 一次，授予日历/短信/位置权限
-# 4. 完成！App 会自动启动服务并退出
+从 [GitHub Releases](https://github.com/lantianhcgp/HermesBridge/releases) 下载最新 APK，手动安装到手机。
+
+安装后打开 App 一次，授予日历/短信/位置权限。App 会自动启动服务并退出（你只看到闪一下）。
+
+### 步骤 2：安装 Agent Skill
+
+在 Termux 中运行以下命令，让 Hermes Agent 知道如何使用这个 App：
+
+```bash
+# 方法 1：从 GitHub 仓库安装（推荐）
+cd ~/.hermes/skills/android
+git clone https://github.com/lantianhcgp/HermesBridge.git hermes-bridge
+
+# 方法 2：手动复制 SKILL.md
+mkdir -p ~/.hermes/skills/android/hermes-bridge
+cp /path/to/SKILL.md ~/.hermes/skills/android/hermes-bridge/
 ```
+
+安装后，Hermes Agent 会自动加载这个 Skill。当你说"帮我创建日程"时，Agent 会自动：
+1. 拉起 App（无感）
+2. 调用 API 创建日程
+3. 告诉你结果
+
+### 步骤 3：验证
+
+```bash
+# 检查 Skill 是否安装
+ls ~/.hermes/skills/android/hermes-bridge/SKILL.md
+
+# 检查 App 是否正常
+timeout 3 am start --user 0 -n com.hermes.bridge/.MainActivity 2>&1 >/dev/null
+sleep 5
+curl -s http://localhost:8889/api/health
+```
+
+看到 `{"status":"ok","version":"2.4.0"}` 就说明一切就绪！
 
 ## 🔄 工作原理
 
