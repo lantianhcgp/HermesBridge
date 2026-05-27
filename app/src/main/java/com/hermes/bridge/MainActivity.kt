@@ -19,8 +19,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnStart: Button
     private lateinit var btnStop: Button
     
-    private var isServiceRunning = false
-    
     companion object {
         const val PORT = 8889
         const val PERMISSION_REQUEST_CODE = 100
@@ -49,6 +47,13 @@ class MainActivity : AppCompatActivity() {
             stopHttpService()
         }
         
+        // 读取真实服务状态，而不是依赖内存变量
+        updateUI()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // 每次回到前台时刷新状态
         updateUI()
     }
     
@@ -169,33 +174,32 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, HttpService::class.java)
         intent.putExtra("port", PORT)
         startForegroundService(intent)
-        isServiceRunning = true
-        updateUI()
+        // 稍等一下让服务启动，然后刷新UI
+        btnStart.postDelayed({ updateUI() }, 500)
         Toast.makeText(this, "HTTP 服务器已启动", Toast.LENGTH_SHORT).show()
     }
     
     private fun stopHttpService() {
         val intent = Intent(this, HttpService::class.java)
         stopService(intent)
-        isServiceRunning = false
-        updateUI()
+        btnStop.postDelayed({ updateUI() }, 500)
         Toast.makeText(this, "HTTP 服务器已停止", Toast.LENGTH_SHORT).show()
     }
     
     private fun updateUI() {
-        if (isServiceRunning) {
+        // 从 HttpService.companion 读取真实状态
+        val running = HttpService.isRunning
+        
+        if (running) {
             tvStatus.text = "状态: 运行中 ✅"
+            tvStatus.setTextColor(0xFF4CAF50.toInt()) // 绿色
             btnStart.isEnabled = false
             btnStop.isEnabled = true
         } else {
             tvStatus.text = "状态: 已停止 ❌"
+            tvStatus.setTextColor(0xFFF44336.toInt()) // 红色
             btnStart.isEnabled = true
             btnStop.isEnabled = false
         }
-    }
-    
-    override fun onDestroy() {
-        super.onDestroy()
-        // Service continues running even if activity is destroyed
     }
 }

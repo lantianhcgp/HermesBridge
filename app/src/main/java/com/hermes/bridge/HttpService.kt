@@ -40,6 +40,16 @@ class HttpService : Service() {
     private lateinit var locationTool: LocationTool
     private lateinit var deviceTool: DeviceTool
     
+    companion object {
+        @Volatile
+        var isRunning = false
+            private set
+        
+        @Volatile
+        var currentPort = 8889
+            private set
+    }
+    
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
@@ -52,8 +62,10 @@ class HttpService : Service() {
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val port = intent?.getIntExtra("port", 8889) ?: 8889
+        currentPort = port
         
         startForeground(NOTIFICATION_ID, createNotification())
+        isRunning = true
         
         serviceScope.launch {
             try {
@@ -61,6 +73,7 @@ class HttpService : Service() {
                 Log.d(TAG, "HTTP server started on port $port")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start HTTP server", e)
+                isRunning = false
             }
         }
         
@@ -171,7 +184,7 @@ class HttpService : Service() {
         
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Hermes Bridge 运行中")
-            .setContentText("端口: 8889 | HTTP 服务器已启动")
+            .setContentText("端口: $currentPort | HTTP 服务器已启动")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
@@ -180,6 +193,7 @@ class HttpService : Service() {
     
     override fun onDestroy() {
         super.onDestroy()
+        isRunning = false
         engine?.stop(1000, 5000)
         serviceScope.cancel()
     }
