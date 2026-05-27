@@ -24,7 +24,7 @@ class CalendarTool(private val context: Context) {
     
     private val gson = Gson()
     
-    private fun parseBody(call: ApplicationCall): Map<String, Any> {
+    private suspend fun parseBody(call: ApplicationCall): Map<String, Any> {
         val bodyStr = call.receiveText()
         @Suppress("UNCHECKED_CAST")
         return gson.fromJson(bodyStr, Map::class.java) as Map<String, Any>
