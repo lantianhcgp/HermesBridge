@@ -80,7 +80,7 @@
         
         <service
             android:name=".HttpService"
-            android:exported="false"
+            android:exported="true"
             android:foregroundServiceType="specialUse">
         </service>
         
