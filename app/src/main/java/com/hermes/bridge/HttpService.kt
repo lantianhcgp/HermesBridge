@@ -10,13 +10,13 @@ import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -31,6 +31,7 @@ class HttpService : Service() {
     
     private var engine: NettyApplicationEngine? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
     
     // Tool instances
     private lateinit var calendarTool: CalendarTool
@@ -50,7 +51,7 @@ class HttpService : Service() {
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val port = intent?.getIntExtra("port", 8888) ?: 8888
+        val port = intent?.getIntExtra("port", 8889) ?: 8889
         
         startForeground(NOTIFICATION_ID, createNotification())
         
@@ -76,37 +77,34 @@ class HttpService : Service() {
     
     private fun startHttpServer(port: Int) {
         engine = embeddedServer(Netty, port = port) {
-            install(ContentNegotiation) {
-                json()
-            }
-            
             routing {
                 // Health check
                 get("/api/health") {
-                    call.respond(mapOf(
+                    val response = mapOf(
                         "status" to "ok",
                         "service" to "HermesBridge",
-                        "version" to "1.0"
-                    ))
+                        "version" to "1.1"
+                    )
+                    call.respondText(gson.toJson(response), io.ktor.http.ContentType.Application.Json)
                 }
                 
                 // Calendar routes
                 route("/api/calendar") {
                     post("/create") {
                         val result = calendarTool.createEvent(call)
-                        call.respond(result)
+                        call.respondText(gson.toJson(result), io.ktor.http.ContentType.Application.Json)
                     }
                     get("/list") {
                         val result = calendarTool.listEvents(call)
-                        call.respond(result)
+                        call.respondText(gson.toJson(result), io.ktor.http.ContentType.Application.Json)
                     }
                     post("/delete") {
                         val result = calendarTool.deleteEvent(call)
-                        call.respond(result)
+                        call.respondText(gson.toJson(result), io.ktor.http.ContentType.Application.Json)
                     }
                     post("/update") {
                         val result = calendarTool.updateEvent(call)
-                        call.respond(result)
+                        call.respondText(gson.toJson(result), io.ktor.http.ContentType.Application.Json)
                     }
                 }
                 
@@ -114,7 +112,7 @@ class HttpService : Service() {
                 route("/api/notify") {
                     post("/send") {
                         val result = notifyTool.sendNotification(call)
-                        call.respond(result)
+                        call.respondText(gson.toJson(result), io.ktor.http.ContentType.Application.Json)
                     }
                 }
                 
@@ -122,7 +120,7 @@ class HttpService : Service() {
                 route("/api/sms") {
                     post("/send") {
                         val result = smsTool.sendSms(call)
-                        call.respond(result)
+                        call.respondText(gson.toJson(result), io.ktor.http.ContentType.Application.Json)
                     }
                 }
                 
@@ -130,7 +128,7 @@ class HttpService : Service() {
                 route("/api/location") {
                     get("") {
                         val result = locationTool.getLocation()
-                        call.respond(result)
+                        call.respondText(gson.toJson(result), io.ktor.http.ContentType.Application.Json)
                     }
                 }
                 
@@ -138,11 +136,11 @@ class HttpService : Service() {
                 route("/api/device") {
                     get("/info") {
                         val result = deviceTool.getDeviceInfo()
-                        call.respond(result)
+                        call.respondText(gson.toJson(result), io.ktor.http.ContentType.Application.Json)
                     }
                     get("/battery") {
                         val result = deviceTool.getBatteryStatus()
-                        call.respond(result)
+                        call.respondText(gson.toJson(result), io.ktor.http.ContentType.Application.Json)
                     }
                 }
             }
@@ -173,7 +171,7 @@ class HttpService : Service() {
         
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Hermes Bridge 运行中")
-            .setContentText("HTTP 服务器监听中...")
+            .setContentText("端口: 8889 | HTTP 服务器已启动")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
