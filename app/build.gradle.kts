@@ -37,12 +37,17 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            excludes += "/META-INF/INDEX.LIST"
-            excludes += "/META-INF/DEPENDENCIES"
-            excludes += "/META-INF/LICENSE.md"
-            excludes += "/META-INF/NOTICE.md"
-            excludes += "/META-INF/LICENSE.txt"
-            excludes += "/META-INF/NOTICE.txt"
+            excludes += "/META-INF/{INDEX.LIST,DEPENDENCIES,NOTICE,LICENSE}.*"
+            excludes += "/META-INF/{INDEX.LIST,DEPENDENCIES,NOTICE.txt,LICENSE.txt}"
+            excludes += "/META-INF/{INDEX.LIST,DEPENDENCIES,NOTICE.md,LICENSE.md}"
+            excludes += "/META-INF/io.netty.versions.properties"
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/NOTICE.md"
+            excludes += "META-INF/LICENSE.txt"
+            excludes += "META-INF/NOTICE.txt"
+            excludes += "META-INF/io.netty.versions.properties"
         }
     }
     
