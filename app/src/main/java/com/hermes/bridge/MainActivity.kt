@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
     private var isServiceRunning = false
     
     companion object {
-        const val PORT = 8888
+        const val PORT = 8889
         const val PERMISSION_REQUEST_CODE = 100
     }
     
