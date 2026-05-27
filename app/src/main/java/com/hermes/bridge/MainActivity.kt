@@ -55,16 +55,11 @@ class MainActivity : AppCompatActivity() {
         // 检查权限，如果已全部授予则自动启动服务
         if (checkPermissions()) {
             startHttpService()
+            // 启动服务后，轮询检查是否成功，成功即退出
+            autoFinishWhenReady()
+        } else {
+            updateUI()
         }
-        
-        // 终端调起模式：启动服务后立即退出，不打扰用户
-        if (intent?.getBooleanExtra("auto_finish", false) == true) {
-            // 延迟退出，等服务启动完成
-            btnStart.postDelayed({ finish() }, 1500)
-            return
-        }
-        
-        updateUI()
     }
     
     override fun onResume() {
@@ -175,8 +170,26 @@ class MainActivity : AppCompatActivity() {
     
     private fun startHttpService() {
         HttpService.start(this, PORT)
-        btnStart.postDelayed({ updateUI() }, 500)
         Toast.makeText(this, "HTTP 服务器启动中...", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * 轮询检查服务是否启动成功，成功后自动退出
+     * 不管是用户手动打开还是终端调起，都会自动退出
+     */
+    private fun autoFinishWhenReady() {
+        val handler = android.os.Handler(mainLooper)
+        val checkRunnable = object : Runnable {
+            override fun run() {
+                if (HttpService.isRunning) {
+                    Toast.makeText(this@MainActivity, "服务已启动 ✅", Toast.LENGTH_SHORT).show()
+                    finish()
+                } else {
+                    handler.postDelayed(this, 200)
+                }
+            }
+        }
+        handler.postDelayed(checkRunnable, 500)
     }
     
     private fun stopHttpService() {
