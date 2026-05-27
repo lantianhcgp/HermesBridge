@@ -8,3 +8,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+hermesbridge.keystore
+hermesbridge.keystore.base64
+apks/

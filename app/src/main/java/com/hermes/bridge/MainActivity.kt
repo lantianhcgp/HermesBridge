@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.material.color.MaterialColors
 
 class MainActivity : AppCompatActivity() {
     
@@ -192,12 +193,14 @@ class MainActivity : AppCompatActivity() {
         
         if (running) {
             tvStatus.text = "状态: 运行中 ✅"
-            tvStatus.setTextColor(0xFF4CAF50.toInt()) // 绿色
+            // Use Material 3 color attributes
+            tvStatus.setTextColor(MaterialColors.getColor(this, com.google.android.material.R.attr.colorPrimary, 0xFF4CAF50.toInt()))
             btnStart.isEnabled = false
             btnStop.isEnabled = true
         } else {
             tvStatus.text = "状态: 已停止 ❌"
-            tvStatus.setTextColor(0xFFF44336.toInt()) // 红色
+            // Use Material 3 color attributes
+            tvStatus.setTextColor(MaterialColors.getColor(this, com.google.android.material.R.attr.colorError, 0xFFF44336.toInt()))
             btnStart.isEnabled = true
             btnStop.isEnabled = false
         }

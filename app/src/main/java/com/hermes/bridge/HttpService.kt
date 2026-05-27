@@ -26,9 +26,21 @@ import kotlinx.coroutines.launch
 class HttpService : Service() {
     
     private val TAG = "HermesBridge"
-    private val CHANNEL_ID = "HermesBridgeChannel"
-    private val NOTIFICATION_ID = 1
+    companion object {
+        // 常驻服务通知通道 — IMPORTANCE_LOW = 不发声、不悬浮、状态栏小图标
+        const val SERVICE_CHANNEL_ID = "HermesBridgeService"
+        const val SERVICE_CHANNEL_NAME = "Hermes Bridge 服务"
+        
+        @Volatile
+        var isRunning = false
+            private set
+        
+        @Volatile
+        var currentPort = 8889
+            private set
+    }
     
+    private val NOTIFICATION_ID = 1
     private var engine: NettyApplicationEngine? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
@@ -40,23 +52,13 @@ class HttpService : Service() {
     private lateinit var locationTool: LocationTool
     private lateinit var deviceTool: DeviceTool
     
-    companion object {
-        @Volatile
-        var isRunning = false
-            private set
-        
-        @Volatile
-        var currentPort = 8889
-            private set
-    }
-    
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
     
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
+        createNotificationChannels()
         initTools()
     }
     
@@ -96,7 +98,7 @@ class HttpService : Service() {
                     val response = mapOf(
                         "status" to "ok",
                         "service" to "HermesBridge",
-                        "version" to "1.1"
+                        "version" to "2.0"
                     )
                     call.respondText(gson.toJson(response), io.ktor.http.ContentType.Application.Json)
                 }
@@ -162,32 +164,52 @@ class HttpService : Service() {
         engine?.start(wait = true)
     }
     
-    private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Hermes Bridge Service",
+    private fun createNotificationChannels() {
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        
+        // 通道 1: 常驻服务通知 — LOW importance，不发声不悬浮
+        val serviceChannel = NotificationChannel(
+            SERVICE_CHANNEL_ID,
+            SERVICE_CHANNEL_NAME,
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "保持 Hermes Bridge 服务运行"
+            description = "Hermes Bridge 后台服务常驻通知（不可关闭）"
+            setShowBadge(false)
+            enableVibration(false)
+            setSound(null, null)
         }
+        notificationManager.createNotificationChannel(serviceChannel)
         
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.createNotificationChannel(channel)
+        // 通道 2: 推送通知 — HIGH importance，悬浮+发声+振动
+        val pushChannel = NotificationChannel(
+            NotifyTool.PUSH_CHANNEL_ID,
+            NotifyTool.PUSH_CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Hermes 推送的通知，会在屏幕上悬浮显示"
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 250, 200, 250)
+            setShowBadge(true)
+        }
+        notificationManager.createNotificationChannel(pushChannel)
     }
     
     private fun createNotification(): Notification {
-        val intent = Intent(this, MainActivity::class.java)
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, SERVICE_CHANNEL_ID)
             .setContentTitle("Hermes Bridge 运行中")
             .setContentText("端口: $currentPort | HTTP 服务器已启动")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
+            .setSilent(true)
             .build()
     }
     
