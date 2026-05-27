@@ -6,10 +6,10 @@ import android.util.Log
 import android.view.WindowManager
 
 /**
- * 透明启动 Activity
+ * 快速启动 Activity
  * 
- * 用途：被 termux-open 调起后，立即启动 HttpService，然后自动关闭自己。
- * 用户看到的效果：无感 —— 前台 App 不变，HermesBridge 在后台运行。
+ * 流程：启动服务 → 立即退出
+ * 用户看到的效果：瞬间闪一下，然后回到之前的 App
  * 
  * 调用方式：
  *   $PREFIX/bin/termux-open "package:com.hermes.bridge/.LaunchActivity"
@@ -21,7 +21,7 @@ class LaunchActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // 让窗口完全不可见
+        // 让窗口不可见
         window.setFlags(
             WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
             WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
@@ -37,17 +37,7 @@ class LaunchActivity : Activity() {
             Log.d(TAG, "LaunchActivity: HttpService already running, skipping start")
         }
         
-        // 立即关闭，不进最近任务，无动画
-        finishAndRemoveTask()
-        @Suppress("DEPRECATION")
-        overridePendingTransition(0, 0)
-    }
-    
-    // 防止 MIUI 显示任何内容
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            finishAndRemoveTask()
-        }
+        // 立即退出，用户只看到一闪
+        finish()
     }
 }
