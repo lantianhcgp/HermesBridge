@@ -59,7 +59,8 @@ class MainActivity : AppCompatActivity() {
         
         // 终端调起模式：启动服务后立即退出，不打扰用户
         if (intent?.getBooleanExtra("auto_finish", false) == true) {
-            finish()
+            // 延迟退出，等服务启动完成
+            btnStart.postDelayed({ finish() }, 1500)
             return
         }
         
