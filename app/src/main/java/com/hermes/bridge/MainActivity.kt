@@ -3,8 +3,10 @@ package com.hermes.bridge
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -19,6 +21,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvPort: TextView
     private lateinit var btnStart: Button
     private lateinit var btnStop: Button
+    private lateinit var statusDot: View
     
     companion object {
         const val PORT = 8889
@@ -33,6 +36,7 @@ class MainActivity : AppCompatActivity() {
         tvPort = findViewById(R.id.tvPort)
         btnStart = findViewById(R.id.btnStart)
         btnStop = findViewById(R.id.btnStop)
+        statusDot = findViewById(R.id.statusDot)
         
         tvPort.text = "端口: $PORT"
         
@@ -191,18 +195,28 @@ class MainActivity : AppCompatActivity() {
         // 从 HttpService.companion 读取真实状态
         val running = HttpService.isRunning
         
+        // 动态设置圆点颜色
+        val dotColor: Int
         if (running) {
+            dotColor = 0xFF4CAF50.toInt()  // 绿色
             tvStatus.text = "状态: 运行中 ✅"
-            // Use Material 3 color attributes
             tvStatus.setTextColor(MaterialColors.getColor(this, com.google.android.material.R.attr.colorPrimary, 0xFF4CAF50.toInt()))
             btnStart.isEnabled = false
             btnStop.isEnabled = true
         } else {
+            dotColor = 0xFFF44336.toInt()  // 红色
             tvStatus.text = "状态: 已停止 ❌"
-            // Use Material 3 color attributes
             tvStatus.setTextColor(MaterialColors.getColor(this, com.google.android.material.R.attr.colorError, 0xFFF44336.toInt()))
             btnStart.isEnabled = true
             btnStop.isEnabled = false
         }
+        
+        // 用 GradientDrawable 动态设置圆点颜色
+        val dotDrawable = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(dotColor)
+            setSize(30, 30)  // 10dp ≈ 30px
+        }
+        statusDot.background = dotDrawable
     }
 }
