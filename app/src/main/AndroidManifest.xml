@@ -45,6 +45,9 @@
     
     <!-- Wake Lock (to keep service running) -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    
+    <!-- Boot Completed Permission (for auto-start on reboot) -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -70,6 +73,20 @@
             android:exported="false"
             android:foregroundServiceType="specialUse">
         </service>
+        
+        <!-- 开机自启广播接收器 -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true"
+            android:enabled="true"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <!-- 小米/MIUI 特殊广播 -->
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
         
     </application>
 

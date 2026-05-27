@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -30,14 +31,37 @@ class HttpService : Service() {
         // 常驻服务通知通道 — IMPORTANCE_LOW = 不发声、不悬浮、状态栏小图标
         const val SERVICE_CHANNEL_ID = "HermesBridgeService"
         const val SERVICE_CHANNEL_NAME = "Hermes Bridge 服务"
+        const val DEFAULT_PORT = 8889
         
         @Volatile
         var isRunning = false
             private set
         
         @Volatile
-        var currentPort = 8889
+        var currentPort = DEFAULT_PORT
             private set
+        
+        /**
+         * 从任何地方启动 HermesBridge 服务（静态方法）
+         * 用于 BootReceiver、外部调用等场景
+         */
+        fun start(context: Context, port: Int = DEFAULT_PORT) {
+            val intent = Intent(context, HttpService::class.java).apply {
+                putExtra("port", port)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+        
+        /**
+         * 停止 HermesBridge 服务
+         */
+        fun stop(context: Context) {
+            context.stopService(Intent(context, HttpService::class.java))
+        }
     }
     
     private val NOTIFICATION_ID = 1
@@ -63,9 +87,15 @@ class HttpService : Service() {
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val port = intent?.getIntExtra("port", 8889) ?: 8889
-        currentPort = port
+        val port = intent?.getIntExtra("port", DEFAULT_PORT) ?: DEFAULT_PORT
         
+        // 防止重复启动
+        if (isRunning && engine != null) {
+            Log.d(TAG, "Service already running on port $currentPort, ignoring start command")
+            return START_STICKY
+        }
+        
+        currentPort = port
         startForeground(NOTIFICATION_ID, createNotification())
         isRunning = true
         
@@ -98,7 +128,8 @@ class HttpService : Service() {
                     val response = mapOf(
                         "status" to "ok",
                         "service" to "HermesBridge",
-                        "version" to "2.0"
+                        "version" to "2.1",
+                        "port" to currentPort
                     )
                     call.respondText(gson.toJson(response), io.ktor.http.ContentType.Application.Json)
                 }
@@ -217,6 +248,7 @@ class HttpService : Service() {
         super.onDestroy()
         isRunning = false
         engine?.stop(1000, 5000)
+        engine = null
         serviceScope.cancel()
     }
 }
