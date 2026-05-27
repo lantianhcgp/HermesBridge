@@ -58,6 +58,7 @@
         android:theme="@style/Theme.HermesBridge"
         tools:targetApi="35">
         
+        <!-- 主界面（用户手动打开时显示） -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -67,6 +68,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- 透明启动器（终端调起用，启动服务后立即关闭） -->
+        <activity
+            android:name=".LaunchActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Transparent"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
         
         <service
             android:name=".HttpService"
