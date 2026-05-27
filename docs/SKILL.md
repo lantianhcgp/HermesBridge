@@ -11,17 +11,30 @@ metadata:
     homepage: https://github.com/lantianhcgp/HermesBridge
 ---
 
-# HermesBridge — Android Phone Control via HTTP API
+# HermesBridge — Android Termux 专属 AI Agent Skill
 
-HermesBridge is a lightweight Android app that runs an HTTP server (port 8889) on the phone, allowing Hermes to control phone features via REST API from the terminal.
+> ⚠️ **本方案专为 Android + Termux 环境设计。**
+> 其他平台（Linux Desktop / macOS / Windows / iOS）的终端环境有完全不同的权限模型和 API 机制，不能直接套用。如果你的 Agent 跑在非 Android Termux 上，请寻找对应平台的原生方案。
+
+HermesBridge 是专为 **Android 手机上用 Termux 跑 AI Agent（如 Hermes）** 设计的桥接方案。它在手机上运行一个 HTTP 服务器（端口 8889），让 Termux 里的 Agent 能通过 REST API 操作手机的日历、短信、通知、位置等功能。
 
 **GitHub:** https://github.com/lantianhcgp/HermesBridge
 
+## 适用环境
+
+| ✅ 支持 | ❌ 不支持 |
+|---------|----------|
+| Android 手机 + Termux App | Linux Desktop / macOS / Windows |
+| Hermes Agent 在 Termux 中运行 | Agent 在 Docker / VM 中运行 |
+| F-Droid 版 Termux | Google Play 版 Termux |
+
 ## Prerequisites
 
-1. **HermesBridge APK installed** on the phone (download from GitHub Releases)
-2. **App opened at least once** (to grant permissions)
-3. **Phone and Termux on the same device** (or network-accessible)
+1. **Android 手机**（本方案仅适用于 Android）
+2. **Termux App**（F-Droid 版本，非 Google Play 版）
+3. **HermesBridge APK installed** on the phone (download from GitHub Releases)
+4. **App opened at least once** (to grant permissions)
+5. **Hermes Agent running in Termux**
 
 ## ⚠️ User Interaction Style
 
@@ -30,6 +43,7 @@ When working with this user:
 - **Minimize visible UI** — user expects 100% seamless (无感) experience
 - **Never open browser or show App UI** unless explicitly asked
 - **Test quietly** — report results, not process
+- **Docs are for AI agents, not humans** — README and docs should be written from the perspective of智能体 (Hermes/OpenClaw) using this as a Skill. Don't write "how to use curl to call API" tutorials — write "how to load the skill and let the agent do the work"
 
 ## User Preference: Seamless (无感) Experience
 
