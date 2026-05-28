@@ -64,7 +64,7 @@ class ContactsTool(private val context: Context) {
                         ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE -> "mobile"
                         ContactsContract.CommonDataKinds.Phone.TYPE_HOME -> "home"
                         ContactsContract.CommonDataKinds.Phone.TYPE_WORK -> "work"
-                        ContactsContract.CommonDataKinds.Phone.TYPE_FAX -> "fax"
+                        ContactsContract.CommonDataKinds.Phone.TYPE_FAX_WORK -> "fax"
                         ContactsContract.CommonDataKinds.Phone.TYPE_MAIN -> "main"
                         else -> cursor.getString(labelCol) ?: "other"
                     }
