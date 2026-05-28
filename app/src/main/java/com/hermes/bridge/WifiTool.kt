@@ -66,7 +66,7 @@ class WifiTool(private val context: Context) {
 
             result.toMap()
         } catch (e: SecurityException) {
-            mapOf("success" to false, "error" to "Location permission required for WiFi info")
+            mapOf("success" to false, "error" to "Permission denied: ${e.message}")
         } catch (e: Exception) {
             mapOf("success" to false, "error" to (e.message ?: "Failed to get WiFi info"))
         }
@@ -103,7 +103,7 @@ class WifiTool(private val context: Context) {
                 "networks" to networks
             )
         } catch (e: SecurityException) {
-            mapOf("success" to false, "error" to "Location permission required for WiFi scan")
+            mapOf("success" to false, "error" to "Permission denied: ${e.message}")
         } catch (e: Exception) {
             mapOf("success" to false, "error" to (e.message ?: "Failed to scan WiFi"))
         }
