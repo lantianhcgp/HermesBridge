@@ -24,8 +24,8 @@ class LocationTool(private val context: Context) {
     @SuppressLint("MissingPermission")
     suspend fun getLocation(call: io.ktor.server.application.ApplicationCall? = null): Map<String, Any> {
         return try {
-            val provider = call?.request?.queryParameters["provider"] ?: "auto"
-            val timeoutSec = call?.request?.queryParameters["timeout"]?.toLongOrNull() ?: 10L
+            val provider = call?.request?.queryParameters?.get("provider") ?: "auto"
+            val timeoutSec = call?.request?.queryParameters?.get("timeout")?.toLongOrNull() ?: 10L
 
             val location = withTimeoutOrNull(timeoutSec * 1000) {
                 getCurrentLocation(provider)

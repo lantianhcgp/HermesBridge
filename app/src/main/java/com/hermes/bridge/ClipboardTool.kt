@@ -22,7 +22,7 @@ class ClipboardTool(private val context: Context) {
             if (clip != null && clip.itemCount > 0) {
                 val item = clip.getItemAt(0)
                 val text = item.text?.toString() ?: ""
-                val label = clip.description?.getLabelAt(0)?.toString() ?: ""
+                val label = clip.description?.label?.toString() ?: ""
                 mapOf(
                     "success" to true,
                     "text" to text,

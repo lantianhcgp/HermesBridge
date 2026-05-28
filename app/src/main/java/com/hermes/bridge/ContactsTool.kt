@@ -64,7 +64,7 @@ class ContactsTool(private val context: Context) {
                         ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE -> "mobile"
                         ContactsContract.CommonDataKinds.Phone.TYPE_HOME -> "home"
                         ContactsContract.CommonDataKinds.Phone.TYPE_WORK -> "work"
-                        ContactsContract.CommonDataKinds.Phone.TYPE_FAX_FAX -> "fax"
+                        ContactsContract.CommonDataKinds.Phone.TYPE_FAX -> "fax"
                         ContactsContract.CommonDataKinds.Phone.TYPE_MAIN -> "main"
                         else -> cursor.getString(labelCol) ?: "other"
                     }
@@ -133,7 +133,7 @@ class ContactsTool(private val context: Context) {
             context.contentResolver.query(
                 ContactsContract.Contacts.CONTENT_URI,
                 arrayOf(ContactsContract.Contacts.DISPLAY_NAME),
-                "${ContactsContract.Contacts.CONTACT_ID} = ?",
+                "${ContactsContract.Contacts._ID} = ?",
                 arrayOf(contactId.toString()),
                 null
             )?.use { cursor ->
