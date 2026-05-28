@@ -53,12 +53,18 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ github.run_number }}
-        name: HermesBridge v2.0.0 (Build ${{ github.run_number }})
+        name: HermesBridge v2.5.0 (Build ${{ github.run_number }})
         body: |
-          HermesBridge v2.0.0 Release
+          HermesBridge v2.5.0 Release
           
           ### Changes
-          - Updated to Material 3 UI
+          - New: Contacts API (search + detail)
+          - New: Clipboard API (read/write/clear)
+          - New: Alarm API (set/cancel)
+          - New: WiFi API (info + scan)
+          - New: Service stop/restart API
+          - Improved: Location with timeout protection
+          - Material 3 UI
           - Signed APK build support
           - Target SDK 35
         files: app/build/outputs/apk/release/app-release.apk

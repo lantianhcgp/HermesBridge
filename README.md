@@ -121,8 +121,25 @@ curl -s -X POST http://localhost:8889/api/notify/send \
   -H "Content-Type: application/json" \
   -d '{"title": "提醒", "text": "该吃药了"}'
 
-# 获取位置
-curl -s http://localhost:8889/api/location
+# 获取位置（支持超时）
+curl -s http://localhost:8889/api/location?timeout=10
+
+# 搜索联系人
+curl -s "http://localhost:8889/api/contacts/search?q=张三"
+
+# 读取剪贴板
+curl -s http://localhost:8889/api/clipboard
+
+# 设置闹钟
+curl -s -X POST http://localhost:8889/api/alarm/set \
+  -H "Content-Type: application/json" \
+  -d '{"hour": 8, "minute": 30, "label": "起床"}'
+
+# 获取 WiFi 信息
+curl -s http://localhost:8889/api/wifi/info
+
+# 停止服务
+curl -s -X POST http://localhost:8889/api/service/stop
 ```
 
 ## ⚠️ 平台限制（仅限 Android Termux）
@@ -149,6 +166,11 @@ app/src/main/java/com/hermes/bridge/
 ├── SmsTool.kt           # 短信发送
 ├── DeviceTool.kt        # 设备信息
 ├── LocationTool.kt      # GPS 定位
+├── ContactsTool.kt      # 通讯录搜索
+├── ClipboardTool.kt     # 剪贴板读写
+├── AlarmTool.kt         # 闹钟设置
+├── AlarmReceiver.kt     # 闹钟触发接收器
+├── WifiTool.kt          # WiFi 信息
 └── BootReceiver.kt      # 开机自启动
 ```
 
