@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 公共下载目录下的 HermesBridge 子目录 -->
+    <external-path
+        name="hermesbridge_downloads"
+        path="Download/HermesBridge/" />
+</paths>
