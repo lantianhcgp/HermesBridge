@@ -6,14 +6,11 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
-import com.google.gson.Gson
 import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
-import io.ktor.utils.io.jvm.javaio.*
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -23,9 +20,7 @@ import kotlinx.coroutines.withContext
  *
  * 提供 multipart file upload 支持，将 Hermes Agent 发送的文件保存到设备。
  * 
- * 参考：
- * - karen-sch/image-upload (Ktor 2.x multipart pattern)
- * - realityexpander/KtorFileUpload (multipart forEachPart + dispose)
+ * 返回 Map<String, Any?>，由调用方 (HttpService.respondJson) 统一序列化。
  */
 class FileTool(private val context: Context) {
 
@@ -33,8 +28,6 @@ class FileTool(private val context: Context) {
         private const val TAG = "HermesBridge"
         private const val FILE_SUBDIR = "HermesBridge"
     }
-
-    private val gson = Gson()
 
     /**
      * 处理 multipart file upload 请求
@@ -44,7 +37,7 @@ class FileTool(private val context: Context) {
      * 
      * 返回: { "success": true, "path": "/storage/...", "name": "xxx.pptx", "size": 12345 }
      */
-    suspend fun receiveFile(call: ApplicationCall): String = withContext(Dispatchers.IO) {
+    suspend fun receiveFile(call: ApplicationCall): Map<String, Any?> = withContext(Dispatchers.IO) {
         try {
             val multipart = call.receiveMultipart()
             var savedPath: String? = null
@@ -73,24 +66,24 @@ class FileTool(private val context: Context) {
             }
 
             if (savedPath != null) {
-                gson.toJson(mapOf(
+                mapOf(
                     "success" to true,
                     "path" to savedPath,
                     "name" to savedName,
                     "size" to savedSize
-                ))
+                )
             } else {
-                gson.toJson(mapOf(
+                mapOf(
                     "success" to false,
                     "error" to "No file received"
-                ))
+                )
             }
         } catch (e: Exception) {
             Log.e(TAG, "File upload failed", e)
-            gson.toJson(mapOf(
+            mapOf(
                 "success" to false,
-                "error" to e.message ?: "Unknown error"
-            ))
+                "error" to (e.message ?: "Unknown error")
+            )
         }
     }
 
