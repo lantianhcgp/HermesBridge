@@ -71,6 +71,7 @@ class HttpService : Service() {
     private lateinit var clipboardTool: ClipboardTool
     private lateinit var alarmTool: AlarmTool
     private lateinit var wifiTool: WifiTool
+    private lateinit var fileTool: FileTool
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -115,6 +116,7 @@ class HttpService : Service() {
         clipboardTool = ClipboardTool(this)
         alarmTool = AlarmTool(this)
         wifiTool = WifiTool(this)
+        fileTool = FileTool(this)
     }
 
     private fun startHttpServer(port: Int) {
@@ -211,6 +213,11 @@ class HttpService : Service() {
                 route("/api/wifi") {
                     get("/info") { call.respondJson(wifiTool.getWifiInfo()) }
                     get("/scan") { call.respondJson(wifiTool.scanWifi()) }
+                }
+
+                // ========== File Upload (NEW) ==========
+                route("/api/file") {
+                    post("/upload") { call.respondJson(fileTool.receiveFile(call)) }
                 }
             }
         }
