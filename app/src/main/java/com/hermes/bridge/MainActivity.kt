@@ -324,12 +324,13 @@ class MainActivity : AppCompatActivity() {
 
                 // 点击打开文件
                 itemView.setOnClickListener {
+                    val ctx = itemView.context
                     val intent = Intent(Intent.ACTION_VIEW).apply {
                         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             // Android 10+: 尝试用 MediaStore URI 或 FileProvider
                             val fileProviderUri = androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
+                                ctx,
+                                "${ctx.packageName}.fileprovider",
                                 file
                             )
                             setDataAndType(fileProviderUri, getMimeType(file.name))
@@ -341,9 +342,9 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     try {
-                        context.startActivity(intent)
+                        ctx.startActivity(intent)
                     } catch (e: Exception) {
-                        Toast.makeText(context, "无法打开文件: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(ctx, "无法打开文件: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
 
