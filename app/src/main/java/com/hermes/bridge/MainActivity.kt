@@ -94,6 +94,169 @@ class MainActivity : AppCompatActivity() {
         rvRecentFiles.adapter = fileAdapter
         refreshFiles()
 
+        // ===== 处理通知点击（SHOW_FILE extra） =====
+        handleIncomingIntent(intent)
+
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingIntent(intent)
+    }
+
+    private fun handleIncomingIntent(intent: Intent) {
+        val fileName = intent.getStringExtra("SHOW_FILE")
+        if (!fileName.isNullOrEmpty()) {
+            showFileReceivedDialog(fileName)
+        }
+    }
+
+    /**
+     * 文件接收完成弹窗
+     */
+    private fun showFileReceivedDialog(fileName: String) {
+        // 查找文件
+        val bridgeDir = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            "HermesBridge"
+        )
+        val file = findFileByName(bridgeDir, fileName)
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_file_received, null)
+
+        val tvFileName = dialogView.findViewById<TextView>(R.id.tvFileName)
+        val tvFileSize = dialogView.findViewById<TextView>(R.id.tvFileSize)
+        val tvFilePath = dialogView.findViewById<TextView>(R.id.tvFilePath)
+        val ivFileIcon = dialogView.findViewById<ImageView>(R.id.ivFileIcon)
+
+        tvFileName.text = fileName
+        if (file != null) {
+            tvFileSize.text = formatFileSize(file.length())
+            tvFilePath.text = file.absolutePath
+            ivFileIcon.text = getFileIcon(fileName)
+        } else {
+            tvFileSize.text = "未知大小"
+            tvFilePath.text = "文件位置: Downloads/HermesBridge/"
+            ivFileIcon.text = "📄"
+        }
+
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+
+        val dialog = builder.create()
+
+        // 打开按钮
+        dialogView.findViewById<Button>(R.id.btnOpen).setOnClickListener {
+            if (file != null) {
+                openFile(file)
+            }
+            dialog.dismiss()
+        }
+
+        // 在列表中查看按钮
+        dialogView.findViewById<Button>(R.id.btnShowInList).setOnClickListener {
+            refreshFiles()
+            dialog.dismiss()
+        }
+
+        // 删除按钮
+        dialogView.findViewById<Button>(R.id.btnDelete).setOnClickListener {
+            if (file != null && file.exists()) {
+                file.delete()
+                refreshFiles()
+                Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show()
+            }
+            dialog.dismiss()
+        }
+
+        // 取消按钮
+        dialogView.findViewById<Button>(R.id.btnCancel).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun findFileByName(dir: File, name: String): File? {
+        if (!dir.exists()) return null
+        return dir.listFiles()?.find { it.name.equals(name, ignoreCase = true) }
+            ?: dir.listFiles()?.find { it.nameWithoutExtension.equals(name.split('.').first(), ignoreCase = true) }
+    }
+
+    private fun openFile(file: File) {
+        val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10+ 用 MediaStore URI
+            try {
+                val resolver = contentResolver
+                val cursor = resolver.query(
+                    android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                    arrayOf(android.provider.MediaStore.Downloads._ID),
+                    "${android.provider.MediaStore.Downloads.DISPLAY_NAME}=?",
+                    arrayOf(file.name),
+                    null
+                )
+                cursor?.use { c ->
+                    if (c.moveToFirst()) {
+                        val id = c.getLong(c.getColumnIndexOrThrow(android.provider.MediaStore.Downloads._ID))
+                        android.net.Uri.parse(
+                            "content://media/external/downloads/$id"
+                        )
+                    } else null
+                }
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            androidx.core.content.FileProvider.getUriForFile(
+                this,
+                "$packageName.fileprovider",
+                file
+            )
+        }
+
+        uri?.let {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(it, contentResolver.getType(it) ?: "application/octet-stream")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            try {
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "无法打开文件", Toast.LENGTH_SHORT).show()
+            }
+        } ?: run {
+            Toast.makeText(this, "无法找到文件", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun formatFileSize(bytes: Long): String {
+        return when {
+            bytes < 1024 -> "$bytes B"
+            bytes < 1024 * 1024 -> String.format("%.1f KB", bytes / 1024.0)
+            bytes < 1024 * 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
+            else -> String.format("%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0))
+        }
+    }
+
+    private fun getFileIcon(fileName: String): String {
+        val ext = fileName.substringAfterLast('.', "").lowercase()
+        return when (ext) {
+            "jpg", "jpeg", "png", "gif", "webp", "bmp" -> "🖼️"
+            "pdf" -> "📄"
+            "doc", "docx" -> "📝"
+            "xls", "xlsx", "csv" -> "📊"
+            "ppt", "pptx" -> "📑"
+            "mp4", "mkv", "avi", "mov" -> "🎬"
+            "mp3", "wav", "flac", "aac" -> "🎵"
+            "zip", "rar", "7z", "tar", "gz" -> "📦"
+            "apk" -> "📱"
+            else -> "📄"
+        }
+    }
+
         // Auto-start if permissions are granted
         if (checkPermissions()) {
             startHttpService()

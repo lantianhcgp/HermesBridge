@@ -137,6 +137,7 @@ class FileTool(private val context: Context) {
 
     /**
      * 弹出通知，点击后弹出 APP 选择器打开文件
+     * 改为：上传中显示进度通知，完成后显示带操作按钮的通知
      */
     private fun showFileNotification(
         fileName: String,
@@ -148,41 +149,50 @@ class FileTool(private val context: Context) {
             val notificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-            // 构建打开文件的 Intent
-            val openIntent = Intent(Intent.ACTION_VIEW).apply {
-                // 优先用 content:// URI（MediaStore 或 FileProvider）
-                val uri = if (fileUri.startsWith("content://")) {
-                    android.net.Uri.parse(fileUri)
-                } else if (file != null && file.exists()) {
-                    // API 26-28: 通过 FileProvider 生成 content:// URI
-                    FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        file
-                    )
-                } else {
-                    // 兜底
-                    android.net.Uri.parse(fileUri)
-                }
-                setDataAndType(uri, getMimeType(fileName))
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            // ===== 第一步：显示上传进度通知（模拟 100% 完成） =====
+            val progressIntent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("SHOW_FILE", fileName)
             }
-
-            // 用 Intent.createChooser 包装，确保弹出 APP 选择器
-            val chooserIntent = Intent.createChooser(openIntent, "用哪个应用打开？")
-
-            val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val progressFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             } else {
                 PendingIntent.FLAG_UPDATE_CURRENT
             }
-
-            val pendingIntent = PendingIntent.getActivity(
+            val progressPendingIntent = PendingIntent.getActivity(
                 context,
                 notificationIdCounter,
-                chooserIntent,
-                flags
+                progressIntent,
+                progressFlags
+            )
+
+            // 显示完成通知（带操作按钮）
+            val openIntent = createOpenFileIntent(fileName, fileUri, file)
+            val openPendingIntent = PendingIntent.getActivity(
+                context,
+                notificationIdCounter + 10,
+                openIntent,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                } else {
+                    PendingIntent.FLAG_UPDATE_CURRENT
+                }
+            )
+
+            val deleteIntent = Intent(context, FileReceiver::class.java).apply {
+                action = "DELETE_FILE"
+                putExtra("FILE_NAME", fileName)
+                putExtra("FILE_URI", fileUri)
+            }
+            val deletePendingIntent = PendingIntent.getBroadcast(
+                context,
+                notificationIdCounter + 20,
+                deleteIntent,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                } else {
+                    PendingIntent.FLAG_UPDATE_CURRENT
+                }
             )
 
             val sizeStr = formatFileSize(fileSize)
@@ -192,18 +202,46 @@ class FileTool(private val context: Context) {
                 .setContentTitle("文件已接收")
                 .setContentText("$fileName（$sizeStr）")
                 .setStyle(NotificationCompat.BigTextStyle()
-                    .bigText("收到文件: $fileName（$sizeStr）\n点击选择 APP 打开"))
-                .setContentIntent(pendingIntent)
+                    .bigText("收到文件: $fileName（$sizeStr）"))
+                .setContentIntent(progressPendingIntent)
                 .setAutoCancel(true)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .addAction(android.R.drawable.ic_menu_open, "打开", openPendingIntent)
+                .addAction(android.R.drawable.ic_menu_delete, "删除", deletePendingIntent)
                 .build()
 
             notificationManager.notify(notificationIdCounter, notification)
-            notificationIdCounter++
+            notificationIdCounter += 100 // 避免与其他通知冲突
 
         } catch (e: Exception) {
             Log.e(TAG, "Failed to show file notification", e)
+        }
+    }
+
+    /**
+     * 创建打开文件的 Intent
+     */
+    private fun createOpenFileIntent(
+        fileName: String,
+        fileUri: String,
+        file: File?
+    ): Intent {
+        return Intent(Intent.ACTION_VIEW).apply {
+            val uri = if (fileUri.startsWith("content://")) {
+                android.net.Uri.parse(fileUri)
+            } else if (file != null && file.exists()) {
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+            } else {
+                android.net.Uri.parse(fileUri)
+            }
+            setDataAndType(uri, getMimeType(fileName))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
     }
 
