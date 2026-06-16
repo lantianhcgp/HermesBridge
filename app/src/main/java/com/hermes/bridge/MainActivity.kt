@@ -97,6 +97,13 @@ class MainActivity : AppCompatActivity() {
         // ===== 处理通知点击（SHOW_FILE extra） =====
         handleIncomingIntent(intent)
 
+        // Auto-start if permissions are granted
+        if (checkPermissions()) {
+            startHttpService()
+            autoFinishWhenReady()
+        } else {
+            updateUI()
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -254,15 +261,6 @@ class MainActivity : AppCompatActivity() {
             "zip", "rar", "7z", "tar", "gz" -> "📦"
             "apk" -> "📱"
             else -> "📄"
-        }
-    }
-
-        // Auto-start if permissions are granted
-        if (checkPermissions()) {
-            startHttpService()
-            autoFinishWhenReady()
-        } else {
-            updateUI()
         }
     }
 
