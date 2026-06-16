@@ -16,11 +16,27 @@ android {
     }
     
     signingConfigs {
-        create("release") {
-            storeFile = file("../hermesbridge.keystore")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "hermes2024"
-            keyAlias = System.getenv("KEY_ALIAS") ?: "hermesbridge"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: "hermes2024"
+        val keystore = file("../hermesbridge.keystore")
+        if (keystore.exists()) {
+            create("release") {
+                storeFile = keystore
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "hermes2024"
+                keyAlias = System.getenv("KEY_ALIAS") ?: "hermesbridge"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: "hermes2024"
+            }
+        }
+    }
+    
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            // 有 keystore 才签名
+            val rc = signingConfigs.findByName("release")
+            if (rc != null) signingConfig = rc
         }
     }
     
