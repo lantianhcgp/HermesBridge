@@ -207,7 +207,7 @@ class FileTool(private val context: Context) {
                 .setAutoCancel(true)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .addAction(android.R.drawable.ic_menu_open, "打开", openPendingIntent)
+                .addAction(android.R.drawable.ic_menu_view, "打开", openPendingIntent)
                 .addAction(android.R.drawable.ic_menu_delete, "删除", deletePendingIntent)
                 .build()
 

@@ -135,13 +135,13 @@ class MainActivity : AppCompatActivity() {
         val tvFileName = dialogView.findViewById<TextView>(R.id.tvFileName)
         val tvFileSize = dialogView.findViewById<TextView>(R.id.tvFileSize)
         val tvFilePath = dialogView.findViewById<TextView>(R.id.tvFilePath)
-        val ivFileIcon = dialogView.findViewById<ImageView>(R.id.ivFileIcon)
+        val ivFileIcon = dialogView.findViewById<TextView>(R.id.ivFileIcon)
 
         tvFileName.text = fileName
         if (file != null) {
             tvFileSize.text = formatFileSize(file.length())
             tvFilePath.text = file.absolutePath
-            ivFileIcon.text = getFileIcon(fileName)
+            ivFileIcon.text = getFileIcon(fileName.substringAfterLast('.', ""))
         } else {
             tvFileSize.text = "未知大小"
             tvFilePath.text = "文件位置: Downloads/HermesBridge/"
@@ -245,22 +245,6 @@ class MainActivity : AppCompatActivity() {
             bytes < 1024 * 1024 -> String.format("%.1f KB", bytes / 1024.0)
             bytes < 1024 * 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
             else -> String.format("%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0))
-        }
-    }
-
-    private fun getFileIcon(fileName: String): String {
-        val ext = fileName.substringAfterLast('.', "").lowercase()
-        return when (ext) {
-            "jpg", "jpeg", "png", "gif", "webp", "bmp" -> "🖼️"
-            "pdf" -> "📄"
-            "doc", "docx" -> "📝"
-            "xls", "xlsx", "csv" -> "📊"
-            "ppt", "pptx" -> "📑"
-            "mp4", "mkv", "avi", "mov" -> "🎬"
-            "mp3", "wav", "flac", "aac" -> "🎵"
-            "zip", "rar", "7z", "tar", "gz" -> "📦"
-            "apk" -> "📱"
-            else -> "📄"
         }
     }
 
