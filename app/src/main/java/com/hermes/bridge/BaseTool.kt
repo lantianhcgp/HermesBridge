@@ -15,11 +15,11 @@ abstract class BaseTool(protected val context: Context) {
     protected val gson: Gson = Gson()
 
     /** 成功响应 */
-    protected fun ok(vararg pairs: Pair<String, Any?>): Map<String, Any?> =
-        mapOf("success" to true) + pairs.toMap()
+    protected fun ok(vararg pairs: Pair<String, Any?>): Map<String, Any> =
+        (@Suppress("UNCHECKED_CAST") mapOf("success" to true) as Map<String, Any>) + pairs.toMap()
 
     /** 失败响应 */
-    protected fun error(message: String): Map<String, Any?> =
+    protected fun error(message: String): Map<String, Any> =
         mapOf("success" to false, "error" to message)
 
     /** 解析 JSON 请求体 */
