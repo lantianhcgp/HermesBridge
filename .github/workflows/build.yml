@@ -1,11 +1,13 @@
-name: Build Android APK
+name: Build & Release
 
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v2.6.1)'
+        required: false
 
 jobs:
   build:
@@ -23,10 +25,7 @@ jobs:
 
     - name: Setup Android SDK
       run: |
-        # 使用 ubuntu-latest 自带的 Android SDK
         echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-        echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-        # 安装必要的 SDK 组件
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
         $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" || true
 
@@ -47,29 +46,60 @@ jobs:
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'hermes2024' }}
       run: ./gradlew assembleRelease
 
+    - name: Get version from build.gradle
+      id: version
+      run: |
+        VERSION=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+        VERSION_CODE=$(grep 'versionCode' app/build.gradle.kts | sed 's/.*= \([0-9]*\).*/\1/')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION (code: $VERSION_CODE)"
+
     - name: Upload Release APK artifact
       uses: actions/upload-artifact@v4
       with:
-        name: HermesBridge-release
+        name: HermesBridge-v${{ steps.version.outputs.version }}
         path: app/build/outputs/apk/release/app-release.apk
         retention-days: 30
 
-    - name: Create GitHub Release
-      if: github.event_name == 'workflow_dispatch'
+    - name: Commit updated APK to repo
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        cp app/build/outputs/apk/release/app-release.apk apks/app-release.apk
+        git add apks/app-release.apk
+        git diff --cached --quiet || git commit -m "chore: update release APK (v${{ steps.version.outputs.version }})"
+        git push
+
+    - name: Create / Update GitHub Release
+      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: v${{ github.run_number }}
-        name: HermesBridge v${{ github.run_number }}
+        tag_name: v${{ steps.version.outputs.version }}
+        name: HermesBridge v${{ steps.version.outputs.version }}
         body: |
-          HermesBridge Release
-          
-          ### Changes
-          - Security: API Key authentication (X-API-Key header)
-          - Refactor: BaseTool base class for consistent responses
-          - Optimization: Singleton Gson, permission constants, logging
-          - Build: Fixed duplicate buildTypes config
+          ## HermesBridge v${{ steps.version.outputs.version }}
+
+          ### 安装
+          1. 下载 `app-release.apk`
+          2. 手动安装到 Android 手机
+          3. 打开 App 授予权限
+          4. 在 Termux 中使用
+
+          ### API Key
+          首次启动自动生成 API Key，查看 logcat 获取：
+          ```bash
+          logcat | grep "Generated API Key"
+          ```
+          所有 API 请求（除 /api/health）需携带 `X-API-Key` 请求头。
+
+          ### API 示例
+          ```bash
+          curl -s -H "X-API-Key: YOUR_KEY" http://localhost:8889/api/device/info
+          ```
         files: app/build/outputs/apk/release/app-release.apk
         draft: false
         prerelease: false
+        make_latest: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

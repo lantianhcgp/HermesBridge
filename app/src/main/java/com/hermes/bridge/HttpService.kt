@@ -130,8 +130,9 @@ class HttpService : Service() {
             routing {
                 // ========== API Key 认证拦截器 ==========
                 intercept(io.ktor.server.application.ApplicationCallPipeline.Call) {
-                    // health 端点不需要认证
-                    if (call.request.local.uri == "/api/health") return@intercept
+                    // health 和 debug 端点不需要认证
+                    val uri = call.request.local.uri
+                    if (uri == "/api/health" || uri == "/api/debug/key") return@intercept
 
                     val key = call.request.headers["X-API-Key"]
                     if (key != apiKey) {
@@ -151,6 +152,16 @@ class HttpService : Service() {
                         "port" to currentPort
                     )
                     call.respondJson(response)
+                }
+
+                // 本地调试：获取 API Key（仅 localhost 可用）
+                get("/api/debug/key") {
+                    val remote = call.request.local.remoteAddress
+                    if (remote == "127.0.0.1" || remote == "::1" || remote == "0:0:0:0:0:0:0:1") {
+                        call.respondJson(mapOf("api_key" to apiKey))
+                    } else {
+                        call.respondJson(mapOf("success" to false, "error" to "Localhost only"))
+                    }
                 }
 
                 post("/api/service/stop") {
