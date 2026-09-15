@@ -147,7 +147,7 @@ class HttpService : Service() {
                     val response = mapOf(
                         "status" to "ok",
                         "service" to "HermesBridge",
-                        "version" to "2.5.0",
+                        "version" to "2.6.0",
                         "port" to currentPort
                     )
                     call.respondJson(response)

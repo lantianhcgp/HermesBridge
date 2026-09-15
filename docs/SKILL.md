@@ -1,7 +1,7 @@
 ---
 name: hermes-bridge
 description: "HermesBridge Android app: control phone features (calendar, SMS, notifications, location, device) via HTTP API from terminal."
-version: 2.4.0
+version: 2.6.0
 author: Hermes Agent
 license: MIT
 platforms: [android]
