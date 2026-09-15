@@ -37,7 +37,7 @@ class CalendarTool(context: Context) : BaseTool(context) {
             val location = body["location"] as? String ?: ""
             val allDay = body["all_day"] as? Boolean ?: false
             
-            Log.i(TAG, "Calendar: creating event "$title"")
+            Log.i(TAG, "Calendar: creating event $title")
             val calendarId = findWritableCalendarId()
                 ?: return error("No writable calendar found")
             
