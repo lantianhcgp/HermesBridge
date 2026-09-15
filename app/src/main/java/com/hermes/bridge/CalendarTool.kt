@@ -4,12 +4,16 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.provider.CalendarContract
-import com.google.gson.Gson
+import android.util.Log
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import java.util.TimeZone
 
-class CalendarTool(private val context: Context) {
+class CalendarTool(context: Context) : BaseTool(context) {
+
+    companion object {
+        private const val TAG = "HermesBridge"
+    }
     
     data class CalendarEvent(
         val id: Long,
@@ -22,27 +26,20 @@ class CalendarTool(private val context: Context) {
         val allDay: Boolean
     )
     
-    private val gson = Gson()
-    
-    private suspend fun parseBody(call: ApplicationCall): Map<String, Any> {
-        val bodyStr = call.receiveText()
-        @Suppress("UNCHECKED_CAST")
-        return gson.fromJson(bodyStr, Map::class.java) as Map<String, Any>
-    }
-    
     suspend fun createEvent(call: ApplicationCall): Map<String, Any> {
         return try {
             val body = parseBody(call)
             
-            val title = body["title"] as? String ?: return errorResponse("title is required")
-            val startMs = body["start_ms"] as? Number ?: return errorResponse("start_ms is required")
-            val endMs = body["end_ms"] as? Number ?: return errorResponse("end_ms is required")
+            val title = body["title"] as? String ?: return error("title is required")
+            val startMs = body["start_ms"] as? Number ?: return error("start_ms is required")
+            val endMs = body["end_ms"] as? Number ?: return error("end_ms is required")
             val description = body["description"] as? String ?: ""
             val location = body["location"] as? String ?: ""
             val allDay = body["all_day"] as? Boolean ?: false
             
+            Log.i(TAG, "Calendar: creating event "$title"")
             val calendarId = findWritableCalendarId()
-                ?: return errorResponse("No writable calendar found")
+                ?: return error("No writable calendar found")
             
             val values = ContentValues().apply {
                 put(CalendarContract.Events.CALENDAR_ID, calendarId)
@@ -63,16 +60,13 @@ class CalendarTool(private val context: Context) {
             
             if (uri != null) {
                 val eventId = ContentUris.parseId(uri)
-                mapOf(
-                    "success" to true,
-                    "event_id" to eventId,
-                    "message" to "Calendar event created successfully"
-                )
+                Log.i(TAG, "Calendar: created event $eventId")
+                ok("event_id" to eventId, "message" to "Calendar event created successfully")
             } else {
-                errorResponse("Failed to create calendar event")
+                error("Failed to create calendar event")
             }
         } catch (e: Exception) {
-            errorResponse(e.message ?: "Unknown error")
+            error(e.message ?: "Unknown error")
         }
     }
     
@@ -126,24 +120,20 @@ class CalendarTool(private val context: Context) {
                 }
             }
             
-            mapOf(
-                "success" to true,
-                "count" to events.size,
-                "events" to events.map { event ->
-                    mapOf(
-                        "id" to event.id,
-                        "calendar_id" to event.calendarId,
-                        "title" to event.title,
-                        "description" to event.description,
-                        "location" to event.location,
-                        "start_ms" to event.startMs,
-                        "end_ms" to event.endMs,
-                        "all_day" to event.allDay
-                    )
-                }
-            )
+            ok("count" to events.size, "events" to events.map { event ->
+                mapOf(
+                    "id" to event.id,
+                    "calendar_id" to event.calendarId,
+                    "title" to event.title,
+                    "description" to event.description,
+                    "location" to event.location,
+                    "start_ms" to event.startMs,
+                    "end_ms" to event.endMs,
+                    "all_day" to event.allDay
+                )
+            })
         } catch (e: Exception) {
-            errorResponse(e.message ?: "Unknown error")
+            error(e.message ?: "Unknown error")
         }
     }
     
@@ -151,7 +141,7 @@ class CalendarTool(private val context: Context) {
         return try {
             val body = parseBody(call)
             val eventId = (body["event_id"] as? Number)?.toLong()
-                ?: return errorResponse("event_id is required")
+                ?: return error("event_id is required")
             
             val deleted = context.contentResolver.delete(
                 ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId),
@@ -159,15 +149,13 @@ class CalendarTool(private val context: Context) {
             )
             
             if (deleted > 0) {
-                mapOf(
-                    "success" to true,
-                    "message" to "Calendar event deleted successfully"
-                )
+                Log.i(TAG, "Calendar: deleted event $eventId")
+                ok("message" to "Calendar event deleted successfully")
             } else {
-                errorResponse("Event not found or already deleted")
+                error("Event not found or already deleted")
             }
         } catch (e: Exception) {
-            errorResponse(e.message ?: "Unknown error")
+            error(e.message ?: "Unknown error")
         }
     }
     
@@ -175,7 +163,7 @@ class CalendarTool(private val context: Context) {
         return try {
             val body = parseBody(call)
             val eventId = (body["event_id"] as? Number)?.toLong()
-                ?: return errorResponse("event_id is required")
+                ?: return error("event_id is required")
             
             val values = ContentValues()
             
@@ -187,7 +175,7 @@ class CalendarTool(private val context: Context) {
             (body["all_day"] as? Boolean)?.let { values.put(CalendarContract.Events.ALL_DAY, if (it) 1 else 0) }
             
             if (values.size() == 0) {
-                return errorResponse("No update fields provided")
+                return error("No update fields provided")
             }
             
             val updated = context.contentResolver.update(
@@ -196,15 +184,13 @@ class CalendarTool(private val context: Context) {
             )
             
             if (updated > 0) {
-                mapOf(
-                    "success" to true,
-                    "message" to "Calendar event updated successfully"
-                )
+                Log.i(TAG, "Calendar: updated event $eventId")
+                ok("message" to "Calendar event updated successfully")
             } else {
-                errorResponse("Event not found")
+                error("Event not found")
             }
         } catch (e: Exception) {
-            errorResponse(e.message ?: "Unknown error")
+            error(e.message ?: "Unknown error")
         }
     }
     
@@ -221,12 +207,5 @@ class CalendarTool(private val context: Context) {
             }
         }
         return null
-    }
-    
-    private fun errorResponse(message: String): Map<String, Any> {
-        return mapOf(
-            "success" to false,
-            "error" to message
-        )
     }
 }

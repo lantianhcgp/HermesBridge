@@ -114,16 +114,24 @@ curl -s http://localhost:8889/api/health
 ### 3. Call APIs
 
 ```bash
-# Create a calendar event
+# 首次启动后，API Key 会自动生成并存储在 App 的 SharedPreferences 中
+# 查看日志获取 API Key: logcat | grep "Generated API Key"
+# 或者直接调用 health 端点查看（不需要认证）
+
+# 创建日程
 curl -s -X POST http://localhost:8889/api/calendar/create \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
   -d '{"title":"Meeting","start_ms":1779948000000,"end_ms":1779951600000}'
 
-# Send a notification
+# 发送通知
 curl -s -X POST http://localhost:8889/api/notify/send \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
   -d '{"title":"Alert","text":"Hello from Hermes!","priority":"high"}'
 ```
+
+**注意：** 除 `/api/health` 外，所有 API 都需要 `X-API-Key` 请求头。首次启动时会自动生成 API Key，查看 logcat 输出获取。
 
 ## API Reference
 

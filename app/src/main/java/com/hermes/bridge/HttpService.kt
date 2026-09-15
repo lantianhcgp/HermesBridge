@@ -11,8 +11,6 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -59,7 +57,6 @@ class HttpService : Service() {
     private val NOTIFICATION_ID = 1
     private var engine: NettyApplicationEngine? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
 
     // Tool instances
     private lateinit var calendarTool: CalendarTool
@@ -120,8 +117,31 @@ class HttpService : Service() {
     }
 
     private fun startHttpServer(port: Int) {
+        // 生成或加载 API Key
+        val prefs = getSharedPreferences("hermes_bridge", Context.MODE_PRIVATE)
+        var apiKey = prefs.getString("api_key", null)
+        if (apiKey == null) {
+            apiKey = java.util.UUID.randomUUID().toString().replace("-", "")
+            prefs.edit().putString("api_key", apiKey).apply()
+            Log.i(TAG, "Generated API Key: $apiKey")
+        }
+
         engine = embeddedServer(Netty, port = port) {
             routing {
+                // ========== API Key 认证拦截器 ==========
+                intercept(io.ktor.server.application.ApplicationCallPipeline.Call) {
+                    // health 端点不需要认证
+                    if (call.request.local.uri == "/api/health") return@intercept
+
+                    val key = call.request.headers["X-API-Key"]
+                    if (key != apiKey) {
+                        call.respondJson(mapOf(
+                            "success" to false,
+                            "error" to "Unauthorized. Missing or invalid X-API-Key header."
+                        ))
+                        finish()
+                    }
+                }
                 // ========== Service Control ==========
                 get("/api/health") {
                     val response = mapOf(
@@ -283,10 +303,12 @@ class HttpService : Service() {
     }
 }
 
-/** Extension: respond with JSON using Gson */
+/** Extension: respond with JSON using Gson（复用 HttpService 的单例 Gson） */
+private val sharedGson = com.google.gson.Gson()
+
 private suspend fun ApplicationCall.respondJson(data: Any) {
     respondText(
-        GsonBuilder().create().toJson(data),
+        sharedGson.toJson(data),
         io.ktor.http.ContentType.Application.Json
     )
 }
