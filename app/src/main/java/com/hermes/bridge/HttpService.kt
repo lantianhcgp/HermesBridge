@@ -149,7 +149,8 @@ class HttpService : Service() {
                         "status" to "ok",
                         "service" to "HermesBridge",
                         "version" to "2.6.0",
-                        "port" to currentPort
+                        "port" to currentPort,
+                        "api_key" to apiKey
                     )
                     call.respondJson(response)
                 }
